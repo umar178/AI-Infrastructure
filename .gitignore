@@ -55,3 +55,4 @@ urdu-sentiment-analysis/
 
 # Ignore the file
 urdu-sentiment-analysis.rar
+.env
