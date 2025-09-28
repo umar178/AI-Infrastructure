@@ -76,7 +76,8 @@ model = AutoModelForSequenceClassification.from_pretrained(
     model_name,
     num_labels=2,
     id2label={0: 'negative', 1: 'positive'},
-    label2id={'negative': 0, 'positive': 1}
+    label2id={'negative': 0, 'positive': 1},
+    ignore_mismatched_sizes=True  # <-- important if checkpoint has mismatched head
 )
 
 # Tokenization function

@@ -51,7 +51,9 @@ dist/
 coverage/
 
 # Ignore the folder
-urdu-sentiment-analysis/
+/Model 1 - Public dataset/urdu_Sentiment_analysis_model/
+/Model 2 - Synthetic dataset/urdu_Intent_classification_model
+/Model 2 - Synthetic dataset/urdu_Topic_classification_model
 
 # Ignore the file
 urdu-sentiment-analysis.rar
