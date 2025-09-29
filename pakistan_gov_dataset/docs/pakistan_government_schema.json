@@ -1,0 +1,299 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://government.pk/schemas/unified-district-data/v1.0",
+  "title": "Pakistan Government Unified District Data Schema",
+  "description": "Common data schema for integrating health, education, and population datasets at district level",
+  "version": "1.0.0",
+  "type": "object",
+  
+  "definitions": {
+    "geography": {
+      "type": "object",
+      "description": "Standardized geographic hierarchy for Pakistan administrative units",
+      "properties": {
+        "province": {
+          "type": "string",
+          "description": "Administrative province in uppercase as per source data",
+          "examples": ["BALOCHISTAN", "PUNJAB", "SINDH", "KHYBER PAKHTUNKHWA", "GILGIT BALTISTAN"]
+        },
+        "district": {
+          "type": "string",
+          "description": "District name in lowercase as per unified output",
+          "examples": ["awaran", "barkhan", "chagai", "dera bugti", "gwadar"]
+        },
+        "city": {
+          "type": "string",
+          "description": "City name for facility-level data",
+          "examples": ["Multan", "Bagh", "Abbottabad"]
+        }
+      },
+      "required": ["province", "district"]
+    },
+
+    "population_data": {
+      "type": "object",
+      "description": "Population demographics and household data",
+      "properties": {
+        "total_population": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total population count at district level"
+        },
+        "households": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of households"
+        },
+        "avg_hh_size": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Average household size"
+        },
+        "census_block": {
+          "type": "string",
+          "description": "Census block identifier for granular data"
+        },
+        "report_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when population data was recorded"
+        }
+      },
+      "required": ["total_population"]
+    },
+
+    "health_data": {
+      "type": "object",
+      "description": "Healthcare facilities and medical resources",
+      "properties": {
+        "hospital_name": {
+          "type": "string",
+          "description": "Name of healthcare facility",
+          "examples": ["Al Rehman Medicure Clinic"]
+        },
+        "number_of_hospitals": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Aggregated count of hospitals at district level"
+        },
+        "total_doctors": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total number of doctors (aggregated at district level)"
+        },
+        "area": {
+          "type": "string",
+          "description": "Area or locality of the health facility"
+        },
+        "address": {
+          "type": "string",
+          "description": "Complete address of health facility"
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact information"
+        }
+      }
+    },
+
+    "education_data": {
+      "type": "object",
+      "description": "Educational institutions and enrollment metrics",
+      "properties": {
+        "number_of_schools": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total number of schools at district level"
+        },
+        "total_number_of_schools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Detailed count from education dataset"
+        },
+        "number_of_primary_schools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of primary schools"
+        },
+        "number_of_secondary_schools": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of secondary schools"
+        },
+        "avg_boys_enrolled_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Average boys enrollment percentage (0-100 scale)"
+        },
+        "avg_girls_enrolled_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Average girls enrollment percentage (0-100 scale)"
+        },
+        "boys_enrolled_raw": {
+          "type": "string",
+          "description": "Original percentage string from source data e.g., '54.77%'"
+        },
+        "girls_enrolled_raw": {
+          "type": "string", 
+          "description": "Original percentage string from source data e.g., '45.23%'"
+        },
+        "complete_primary_schools_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of complete primary schools"
+        },
+        "schools_with_single_classroom_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of schools with single classroom"
+        },
+        "schools_with_single_teacher_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of schools with single teacher"
+        },
+        "education_score": {
+          "type": "number",
+          "description": "Composite education quality score"
+        },
+        "school_infrastructure_score": {
+          "type": "number",
+          "description": "Infrastructure quality assessment"
+        },
+        "area_km2": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Geographical area in square kilometers"
+        },
+        "year": {
+          "type": "integer",
+          "description": "Academic year of data collection"
+        }
+      },
+      "required": ["avg_boys_enrolled_pct", "avg_girls_enrolled_pct"]
+    },
+
+    "infrastructure_metrics": {
+      "type": "object",
+      "description": "School infrastructure and facility metrics",
+      "properties": {
+        "schools_with_electricity_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "schools_with_drinking_water_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "schools_with_boundary_wall_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "schools_with_toilet_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "all_four_facilities_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Schools with all four basic facilities"
+        },
+        "no_facility_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Schools with no basic facilities"
+        }
+      }
+    },
+
+    "calculated_metrics": {
+      "type": "object",
+      "description": "Derived metrics for policy analysis",
+      "properties": {
+        "doctor_to_population_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Doctors per 10,000 population"
+        },
+        "school_to_population_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Schools per 10,000 population"
+        },
+        "gender_parity_index": {
+          "type": "number",
+          "description": "Girls enrollment divided by boys enrollment ratio"
+        },
+        "education_infrastructure_index": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Composite index of education infrastructure quality"
+        }
+      }
+    }
+  },
+
+  "properties": {
+    "geography": {
+      "$ref": "#/definitions/geography"
+    },
+    "population_data": {
+      "$ref": "#/definitions/population_data"
+    },
+    "health_data": {
+      "$ref": "#/definitions/health_data"
+    },
+    "education_data": {
+      "$ref": "#/definitions/education_data"
+    },
+    "infrastructure_metrics": {
+      "$ref": "#/definitions/infrastructure_metrics"
+    },
+    "calculated_metrics": {
+      "$ref": "#/definitions/calculated_metrics"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0.0"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data_source": {
+          "type": "string",
+          "enum": ["Pakistan Bureau of Statistics", "Ministry of Health", "Ministry of Education"]
+        },
+        "aggregation_level": {
+          "type": "string",
+          "const": "district"
+        }
+      },
+      "required": ["schema_version", "created_date", "data_source"]
+    }
+  },
+
+  "required": [
+    "geography",
+    "population_data",
+    "metadata"
+  ],
+
+  "additionalProperties": false
+}
