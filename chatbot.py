@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -10,6 +10,12 @@ import os
 from dotenv import load_dotenv
 from transformers import AutoConfig
 
+# ✅ SlowAPI imports
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 load_dotenv()
 device = 0 if torch.cuda.is_available() else -1
 
@@ -18,6 +24,23 @@ security = HTTPBearer()
 API_TOKEN = os.getenv("API_KEY")
 
 repo_root = Path(__file__).resolve().parent
+
+# ✅ Initialize Limiter
+limiter = Limiter(key_func=get_remote_address)
+
+app = FastAPI()
+
+# ✅ Add SlowAPI middleware
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+# ✅ Global exception handler for rate limit
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={"detail": "Rate limit exceeded. Try again later."}
+    )
 
 # region Model v1 Sentiment Analysis variables
 model_v1_path = repo_root / "Model 1 - Public dataset" / "urdu_Sentiment_analysis_model"
@@ -45,7 +68,7 @@ model_topic_v2 = AutoModelForSequenceClassification.from_pretrained(model_v2_top
 pipeline_topic_v2 = TextClassificationPipeline(model=model_topic_v2, tokenizer=tokenizer_topic_v2, device=device)
 # endregion
 
-# region Model v2 Topic Analysis variables
+# region Model v2 Intent Analysis variables
 model_v2_intent_path = repo_root / "Model 2 - Synthetic dataset" / "urdu_Intent_classification_model"
 config_intent = AutoConfig.from_pretrained(model_v2_intent_path)
 id2label = {}
@@ -82,10 +105,8 @@ def analyze_sentiment(message):
     print(f"Predicted label: {result['label']}, Confidence: {result['score']:.4f}")
     return result
 
-
 def classify_message_topic(msg):
     results = pipeline_topic_v2(msg, truncation=True)
-
     if isinstance(msg, str):
         result = results[0]
         return {
@@ -105,7 +126,6 @@ def classify_message_topic(msg):
 
 def classify_message_intent(msg):
     results = pipeline_intent_v2(msg, truncation=True)
-
     if isinstance(msg, str):
         result = results[0]
         return {
@@ -123,20 +143,26 @@ def classify_message_intent(msg):
             })
         return output
 
-app = FastAPI()
+@app.get("/")
+@limiter.limit("10/minute")  # ✅ Example rate limit
+async def root(request: Request):
+    return {"message": "Text classification is working!"}
 
 @app.post("/getanalysis")
-def get_analysis(request: MessageRequest, authorized: bool = Depends(verify_token)):
+@limiter.limit("5/minute")
+def get_analysis(request: MessageRequest, request_obj: Request, authorized: bool = Depends(verify_token)):
     result = analyze_sentiment(request.message)
     return JSONResponse(content=result)
 
 @app.post("/getTopic")
-def get_analysis(request: MessageRequest, authorized: bool = Depends(verify_token)):
+@limiter.limit("5/minute")
+def get_topic(request: MessageRequest, request_obj: Request, authorized: bool = Depends(verify_token)):
     result = classify_message_topic(request.message)
     return JSONResponse(content=result)
 
 @app.post("/getIntent")
-def get_analysis(request: MessageRequest, authorized: bool = Depends(verify_token)):
+@limiter.limit("5/minute")
+def get_intent(request: MessageRequest, request_obj: Request, authorized: bool = Depends(verify_token)):
     result = classify_message_intent(request.message)
     return JSONResponse(content=result)
 

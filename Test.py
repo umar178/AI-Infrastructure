@@ -1,91 +1,162 @@
+# Import necessary modules
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+import pandas as pd
 import os
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch.nn.functional as F
 
-# ------------------------------
-# 1. Paths
-# ------------------------------
-MODEL_DIR = "Model 2 - Synthetic dataset/urdu_Topic_classification_model"  # same as your training output_dir
-LABEL_MAP_PATH = os.path.join(MODEL_DIR, "label_mapping.txt")
+# Create FastAPI application instance
+app = FastAPI(title="District Data API", description="API for accessing district information")
 
-# ------------------------------
-# 2. Load model and tokenizer
-# ------------------------------
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR).to(device)
-model.eval()
+# Set up security scheme for API key authentication
+security = HTTPBearer()
 
-# ------------------------------
-# 3. Load label mapping
-# ------------------------------
-id2label = {}
-with open(LABEL_MAP_PATH, "r", encoding="utf-8") as f:
-    for line in f:
-        idx, label = line.strip().split("\t")
-        id2label[int(idx)] = label
+# Your secret API key - using your custom name
+API_KEY = "MY_UNIFIED_API_KEY_123"
 
-# ------------------------------
-# 4. Prediction function
-# ------------------------------
-def predict(texts):
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+
+# Function to verify API key
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
-    texts: str or list of str (Urdu text)
-    returns: list of dicts with label & confidence
+    This function checks if the provided API key matches our expected key
+    It runs automatically before each endpoint execution
     """
-    if isinstance(texts, str):
-        texts = [texts]
+    if credentials.credentials != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key"
+        )
+    return True
 
-    inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(device)
-    with torch.no_grad():
-        outputs = model(**inputs)
-        probs = F.softmax(outputs.logits, dim=-1)
 
-    predictions = []
-    for i, prob in enumerate(probs):
-        pred_id = prob.argmax().item()
-        predictions.append({
-            "text": texts[i],
-            "predicted_label": id2label[pred_id],
-            "confidence": round(prob[pred_id].item(), 4)
-        })
-    return predictions
-
-# ------------------------------
-# 5. Example usage
-# ------------------------------
-if __name__ == "__main__":
-    examples = [
-        # Population
-        "پاکستان کی آبادی تیزی سے بڑھ رہی ہے۔",
-        "آبادی میں اضافہ معاشی مسائل پیدا کر رہا ہے۔",
-        "دیہات سے شہروں کی طرف ہجرت میں اضافہ ہوا ہے۔",
-        "آبادی کے دباؤ کی وجہ سے وسائل کم پڑ رہے ہیں۔",
-        "پاکستان کی آبادی کتنی ہے۔",
-        "پاکستان میں کتنے ہسپتال کتنی آبادی ہے۔",
-
-        # Other
-        "کل موسم بہت خوشگوار تھا۔",
-        "مجھے کتابیں پڑھنے کا شوق ہے۔",
-        "نئی فلم سینما گھروں میں ریلیز ہو گئی ہے۔",
-        "کل شہر میں ثقافتی میلہ منعقد ہوا۔",
-
-        # Health
-        "ہسپتال میں مریضوں کی تعداد بڑھ گئی ہے۔",
-        "صحت مند خوراک انسانی زندگی کے لیے ضروری ہے۔",
-        "ڈاکٹروں نے احتیاطی تدابیر اختیار کرنے کی ہدایت دی۔",
-        "بچوں کے ٹیکہ جات مہم کا آغاز کیا گیا ہے۔",
-        "مجھے ہسپتال کا ایڈریس بتائیں۔",
-
-        # Education
-        "تعلیم ہر بچے کا بنیادی حق ہے۔",
-        "یونیورسٹی میں داخلے کے لیے امتحانات جاری ہیں۔",
-        "اساتذہ طلبہ کی رہنمائی کے لیے ورکشاپ کا انعقاد کر رہے ہیں۔",
-        "سکولوں میں نصاب میں تبدیلیاں کی جا رہی ہیں۔",
-        "آبادی کا کتنا حصہ تعلیمی ادارے میں پڑھتا ہے۔"
+# Load CSV data when the application starts
+def load_data():
+    """
+    Load the CSV file - try multiple possible locations
+    """
+    # Try all possible paths
+    possible_paths = [
+        "data/processed/pakistan_unified_district_data.csv",  # From scripts folder
+        "../data/processed/pakistan_unified_district_data.csv",  # From root folder
+        "../../data/processed/pakistan_unified_district_data.csv",  # If nested deeper
+        "processed/pakistan_unified_district_data.csv",  # If in scripts/processed
+        "../pakistan_unified_district_data.csv"  # If in root folder
     ]
 
-    results = predict(examples)
-    for r in results:
-        print(r)
+    for csv_path in possible_paths:
+        try:
+            print(f"Trying to load CSV from: {csv_path}")
+            df = pd.read_csv(csv_path)
+            print(f"SUCCESS! Loaded {len(df)} records from: {csv_path}")
+            print(f"Columns: {df.columns.tolist()}")
+
+            # Convert DataFrame to list of dictionaries
+            data = df.to_dict(orient="records")
+            return data
+
+        except FileNotFoundError:
+            print(f"Not found: {csv_path}")
+            continue
+        except Exception as e:
+            print(f"Error reading {csv_path}: {e}")
+            continue
+
+    print("ERROR: Could not find CSV file in any location")
+    return []
+
+
+# Load data into memory
+district_data = load_data()
+
+
+# Root endpoint - basic health check
+@app.get("/")
+async def root():
+    """Simple endpoint to check if API is running"""
+    return {"message": "District Data API is running!", "records_loaded": len(district_data)}
+
+
+# Endpoint 1: Get all records
+@app.get("/data", dependencies=[Depends(verify_api_key)])
+@limiter.limit("100/minute")
+async def get_all_data(request: Request):
+    """
+    Returns all records from the CSV file as JSON
+    Requires valid API key in Authorization header
+    """
+    if not district_data:
+        raise HTTPException(status_code=404, detail="No data found - CSV file may be missing")
+    return district_data
+
+
+# Endpoint 2: Get single record by index
+@app.get("/data/{id}", dependencies=[Depends(verify_api_key)])
+@limiter.limit("50/minute")
+async def get_single_data(request: Request, id: int):
+    """
+    Returns a single record by its index position (0-based)
+    Example: /data/0 returns the first record
+    """
+    if id < 0 or id >= len(district_data):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Record with id {id} not found. Available IDs: 0 to {len(district_data) - 1}"
+        )
+    return district_data[id]
+
+
+# Endpoint 3: Filter records by district name
+@app.get("/filter", dependencies=[Depends(verify_api_key)])
+@limiter.limit("30/minute")
+async def filter_by_district(request: Request, district: str):
+    """
+    Filters records by district name (case-insensitive partial match)
+    Example: /filter?district=central
+    """
+    if not district_data:
+        raise HTTPException(status_code=404, detail="No data available")
+
+    # Filter data - convert both to lowercase for case-insensitive search
+    filtered_data = [
+        record for record in district_data
+        if district.lower() in record.get("district", "").lower()
+    ]
+
+    if not filtered_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No districts found matching '{district}'"
+        )
+
+    return filtered_data
+
+
+# Special endpoint to check data structure (no auth required)
+@app.get("/info")
+async def get_info():
+    """Returns information about the loaded data structure"""
+    if not district_data:
+        return {"message": "No data loaded", "columns": []}
+
+    # Get column names from first record
+    sample_record = district_data[0]
+    return {
+        "total_records": len(district_data),
+        "available_columns": list(sample_record.keys()),
+        "sample_record": sample_record
+    }
+
+
+# Error handler for rate limiting
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    raise HTTPException(
+        status_code=429,
+        detail="Rate limit exceeded. Please try again later."
+    )
