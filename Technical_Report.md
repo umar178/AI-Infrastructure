@@ -21,17 +21,17 @@ To overcome these limitations, a Geographic Master Lookup Table was introduced, 
 
 ## 	API Impletation Usig FastAPI
 To enable practical access to district-level data, a RESTful API was developed using FastAPI and served locally via Uvicorn. The APIs were secured with Bearer token authentication. Five main endpoints were created:
-•	/ → Simple health check
-•	/data → Returns all district records
-•	/data/{id} → Returns a single record by index
-•	/filter → Filters records by district name
-•	/info → Provides metadata about the dataset
+-	/ → Simple health check
+-	/data → Returns all district records
+-	/data/{id} → Returns a single record by index
+-	/filter → Filters records by district name
+-	/info → Provides metadata about the dataset
 All endpoints return JSON responses, and those returning data require an API key in the Authorization header. Rate limiting is applied to prevent abuse.
-Sample API Call
+### Sample API Call
 curl -X GET "http://127.0.0.1:8000/data/10" \
   -H "Authorization: Bearer <API_KEY>" \
   -H "accept: application/json"
-Sample Response
+### Sample Response
 {
   "province": "BALOCHISTAN",
   "district": "kech",
