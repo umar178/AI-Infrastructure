@@ -54,7 +54,7 @@ For future improvements, several enhancements are planned:
 These steps aim to make the District Data API a robust, reliable, and extensible platform for researchers, policymakers, and developers working with district-level datasets in Pakistan.
 
 
-2. NLP Model Training for Urdu
+### NLP Model Training for Urdu
 The NLP component required text classification capabilities in Urdu. Two datasets were used for model training:
 - Publicly available Urdu dataset (limited to sentiment analysis)
 - A custom AI-generated dataset with multiple labels for broader classification tasks
@@ -64,7 +64,7 @@ The limitation of the public dataset was its narrow focus, which led to the crea
 Models were fine-tuned and published on Hugging Face for open access: https://huggingface.co/umar178/UrduTextClassificationModels/tree/main
 
 
-3. API Development
+## API Development
 To enable practical use of the trained models, a RESTful API layer was developed and deployed on a private VPS. The APIs were secured with authentication. Three main endpoints were created:
 - getanalysis: Sentiment analysis
 - getintent: Intent classification
@@ -78,6 +78,7 @@ curl -X POST "http://n8n.srv940619.hstgr.cloud:5050/gettopic" ^
   -H "Content-Type: application/json" ^
   -H "Authorization: Bearer <token>" ^
   -d "{\"message\":\"آپ کیسے ہیں\"}"
+
 where bearer token is: 9f4b2c6d87a3e015d2e9c84b7f61a1b8c3d74e5f00a19d8f6b42e7d1ac59f304
 
 # Results
@@ -95,5 +96,5 @@ This project directly supports Pakistan’s digital independence by:
 - Offering open-source NLP models and datasets for public and private sector innovation.
 - Supporting the Pakistan Digital Authority Act and National AI Policy.
 
-# Conclusion
+### Conclusion
 Phase 1 successfully solved the foundational problems of schema design, localized NLP model training, and secure API development. The outputs are reusable, open, and ready to serve as the basis for Phase 2 and eventual commercialization as the Pakistan National AI Cloud & API Gateway.
