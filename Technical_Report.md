@@ -1,8 +1,8 @@
 # Phase 1 Project Report – Pakistan National AI Cloud & API Gateway
 # Resources
-- Github
-- Dataset
-- Fine tuned models
+- Github [https://github.com/umar178/AI-Infrastructure.git]
+- Dataset [https://huggingface.co/datasets/umar178/UrduMultiDomainClassification]
+- Fine tuned models [https://huggingface.co/umar178/UrduTextClassificationModels/tree/main]
 
 # Introduction
 This document presents the work completed during Phase 1 of the hackathon, focused on building the foundation for the Pakistan National AI Cloud & API Gateway. The aim was to address the lack of unified AI infrastructure in Pakistan by designing common government data schemas, training Urdu NLP models, and creating secure RESTful APIs. This phase lays the groundwork for a commercialization-ready infrastructure to serve government, academia, and startups.
@@ -20,31 +20,29 @@ A few special administrative regions and recently formed districts lacked repres
 To overcome these limitations, a Geographic Master Lookup Table was introduced, which mapped each city or town to its corresponding district. This lookup greatly improved merge accuracy and ensured consistent district-level aggregation across all datasets. Manual verification was also conducted for unmatched entries to improve completeness. For future improvements, expanding the master reference file, including updated regional data, and automating name standardization through fuzzy matching or machine learning-based entity resolution are recommended. Extending temporal coverage and integrating real-time data sources through APIs will further strengthen the pipeline’s reliability.
 
 ## 	API Impletation Usig FastAPI
-The District Data API was implemented using FastAPI, a modern, high-performance Python web framework for building RESTful APIs. FastAPI was chosen for its speed, automatic generation of OpenAPI (Swagger) documentation, and support for asynchronous request handling, which is essential for efficiently serving large datasets.
-The API provides multiple endpoints for accessing and querying district-level data:
-•	GET / – Root endpoint for a simple health check.
-•	GET /data – Returns all district records in JSON format.
-•	GET /data/{id} – Retrieves a single record by its index.
-•	GET /filter – Filters districts based on a query parameter district.
-•	GET /info – Provides metadata about the loaded dataset, including the number of records, available fields, and dataset coverage.
-To secure access to sensitive data, the API uses Bearer token authentication. Requests to endpoints that return data require an Authorization header with a valid API key. Additionally, rate limiting was implemented using the SlowAPI library to prevent abuse: /data allows 100 requests per minute, /data/{id} allows 50 requests per minute, and /filter allows 30 requests per minute. Requests exceeding these limits return a 429 Too Many Requests error.
-The API can be run locally using Uvicorn, a lightning-fast ASGI server, with hot reload enabled for development. Once the server is running, interactive documentation is automatically available at /docs (Swagger UI), allowing developers to view endpoints, read their descriptions, and test API calls directly from the browser. The OpenAPI specification is also exposed at /openapi.json for integration with other tools.
-Sample API usage:
-# Health check
-curl http://127.0.0.1:8000/docs
-
-# Get all district data
-curl -H "Authorization: Bearer <API_KEY>" http://127.0.0.1:8000/data
-
-# Get single record by index
-curl -H "Authorization: Bearer <API_KEY>" http://127.0.0.1:8000/data/0
-
-# Filter by district
-curl -H "Authorization: Bearer <API_KEY>" "http://127.0.0.1:8000/filter?district=central"
-
-# Get dataset info
-curl http://127.0.0.1:8000/info
-This implementation ensures consistent, secure, and efficient access to district-level datasets, while providing a foundation for future enhancements such as integrating additional data sources, expanding temporal coverage, and improving API functionality.
+To enable practical access to district-level data, a RESTful API was developed using FastAPI and served locally via Uvicorn. The APIs were secured with Bearer token authentication. Five main endpoints were created:
+•	/ → Simple health check
+•	/data → Returns all district records
+•	/data/{id} → Returns a single record by index
+•	/filter → Filters records by district name
+•	/info → Provides metadata about the dataset
+All endpoints return JSON responses, and those returning data require an API key in the Authorization header. Rate limiting is applied to prevent abuse.
+Sample API Call
+curl -X GET "http://127.0.0.1:8000/data/10" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -H "accept: application/json"
+Sample Response
+{
+  "province": "BALOCHISTAN",
+  "district": "kech",
+  "total_population": 909116,
+  "number_of_hospitals": 3,
+  "total_doctors": 111,
+  "number_of_schools": 2656,
+  "avg_boys_enrolled_pct": 67.4725,
+  "avg_girls_enrolled_pct": 32.53
+}
+This implementation ensures secure and efficient access to district-level datasets and demonstrates the feasibility of building localized data APIs.
 
 ##	Future Enhancement
 For future improvements, several enhancements are planned:
